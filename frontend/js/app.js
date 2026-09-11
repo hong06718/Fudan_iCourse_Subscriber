@@ -283,6 +283,7 @@ document.addEventListener("alpine:init", () => {
     subsSaving: false, subsError: "",
     singleRunTriggering: false,
     singleRunUseOfficial: false,
+    lectureRunningSubId: null,
     /* Per-browser pinned-courses set, lazily synced to localStorage. */
     starred: _loadStarred(),
 
@@ -1003,6 +1004,42 @@ document.addEventListener("alpine:init", () => {
         this.subsError = e?.message || "触发失败";
       } finally {
         this.singleRunTriggering = false;
+      }
+    },
+
+    // ── Single-lecture run (notes email) ─────────────────────────────
+    async runLectureWorkflow(subId) {
+      if (this.lectureRunningSubId) return;
+      const courseId = this.currentCourse
+        ? String(this.currentCourse.course_id)
+        : null;
+      if (!courseId) {
+        this._toast("缺少课程上下文", "error");
+        return;
+      }
+      const creds = _loadCreds();
+      if (!creds?.token) {
+        this._toast("未登录或 PAT 缺失", "error");
+        return;
+      }
+      const targetSubId = String(subId);
+      this.lectureRunningSubId = targetSubId;
+      try {
+        // Trigger the dedicated single_run workflow scoped to exactly one
+        // lecture. The backend will reuse the existing summary if present
+        // (and re-send it) or process the recording from scratch.
+        await ICS.github.triggerSingleRunWorkflow(
+          this.repoOwner, this.repoName, "main", creds.token,
+          [courseId], false, [targetSubId],
+        );
+        this._toast(
+          "已触发单节笔记，处理完成后将发送到 RECEIVER_EMAIL",
+          "success",
+        );
+      } catch (e) {
+        this._toast(e?.message || "触发失败", "error");
+      } finally {
+        this.lectureRunningSubId = null;
       }
     },
 

@@ -76,12 +76,15 @@ class LectureRunner:
     # ── Public entry point ──────────────────────────────────────────────
 
     def run(self, course_id: str, course_title: str, lecture: dict,
-            next_info: Optional[tuple[str, str]] = None) -> Optional[str]:
+            next_info: Optional[tuple[str, str]] = None,
+            resend_if_emailed: bool = False) -> Optional[str]:
         """Process one lecture.  Returns the summary text or None.
 
         ``next_info``: ``(course_id, sub_id)`` of the next lecture, used to
         kick off its prefetch concurrently.  Pass ``None`` for the last
-        lecture in the batch.
+        lecture in the batch.  When ``resend_if_emailed`` is True, an
+        existing summary is re-queued for email even if it was already
+        emailed (used by single-lecture "resend notes" runs).
         """
         sub_id = str(lecture["sub_id"])
         sub_title = lecture.get("sub_title", sub_id)
@@ -100,7 +103,7 @@ class LectureRunner:
             self._db.clear_error(sub_id)
             # The return value feeds the email batch — suppress it when
             # this summary already went out so it isn't re-sent.
-            if existing.get("emailed_at"):
+            if existing.get("emailed_at") and not resend_if_emailed:
                 return None
             return existing["summary"]
 

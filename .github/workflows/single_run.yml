@@ -12,6 +12,11 @@ on:
         required: false
         default: false
         type: boolean
+      sub_ids:
+        description: "Optional specific lecture sub_id(s) to process (comma-separated). Leave empty to process the whole course."
+        required: false
+        default: ""
+        type: string
 
 permissions:
   contents: write
@@ -162,6 +167,7 @@ jobs:
           StuId: ${{ secrets.STUID }}
           UISPsw: ${{ secrets.UISPSW }}
           COURSE_IDS: ${{ inputs.course_ids }}
+          SUB_IDS: ${{ inputs.sub_ids }}
           USE_OFFICIAL_TRANSCRIPT: ${{ inputs.use_official_transcript && '1' || '' }}
           SMTP_EMAIL: ${{ secrets.SMTP_EMAIL }}
           SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}

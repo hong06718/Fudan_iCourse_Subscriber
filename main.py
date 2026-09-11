@@ -112,18 +112,31 @@ def _enumerate_lectures(client: ICourseClient, db: Database,
                     reporter.course_dedup_skip(title, lec["sub_id"])
             lectures = deduped
 
+            # 单节模式：只保留用户通过 SUB_IDS 指定的课次，忽略其余课程内课次。
+            forced_ids = set(config.SUB_IDS)
+            if forced_ids:
+                lectures = [
+                    lec for lec in lectures
+                    if str(lec.get("sub_id")) in forced_ids
+                ]
+
             known_processed = db.get_processed_sub_ids(course_id)
             new_lectures = [
                 lec for lec in lectures
                 if lec.get("has_playback")
-                and str(lec["sub_id"]) not in known_processed
+                and (
+                    str(lec["sub_id"]) not in known_processed
+                    or str(lec["sub_id"]) in forced_ids
+                )
             ]
             unprocessed = db.get_unprocessed_lectures(course_id)
             new_ids = {str(lec["sub_id"]) for lec in new_lectures}
             retry_only = [
                 {"sub_id": u["sub_id"], "sub_title": u["sub_title"],
                  "date": u["date"]}
-                for u in unprocessed if u["sub_id"] not in new_ids
+                for u in unprocessed
+                if u["sub_id"] not in new_ids
+                and (not forced_ids or u["sub_id"] in forced_ids)
             ]
             new_lectures.extend(retry_only)
             reporter.course_new_count(len(new_lectures))
@@ -174,8 +187,11 @@ def _drive_lectures(client: ICourseClient, db: Database,
 
         _check_session(client)
         try:
+            # 单节模式：若这节课已有摘要且此前已发过邮件，仍允许重新发送。
+            resend_if_emailed = str(sub_id) in set(config.SUB_IDS)
             summary = runner.run(
                 course_id, course_title, lecture, next_info=next_info,
+                resend_if_emailed=resend_if_emailed,
             )
             if summary:
                 email_items.append({

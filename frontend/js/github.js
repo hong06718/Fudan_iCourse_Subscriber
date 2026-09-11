@@ -214,13 +214,16 @@ async function _setCourseIdsSecret(owner, repo, token, courseIds) {
   return value;
 }
 
-async function _triggerSingleRunWorkflow(owner, repo, ref, token, courseIds, useOfficial) {
+async function _triggerSingleRunWorkflow(owner, repo, ref, token, courseIds, useOfficial, subIds) {
   const url = `${_GH_API}/repos/${owner}/${repo}/actions/workflows/single_run.yml/dispatches`;
   const ids = (Array.isArray(courseIds) ? courseIds : [])
     .map(String).map((s) => s.trim()).filter(Boolean).join(",");
   if (!ids) throw new Error("单次运行列表为空");
   const inputs = { course_ids: ids };
   if (useOfficial) inputs.use_official_transcript = "true";
+  const wantedSubs = (Array.isArray(subIds) ? subIds : [])
+    .map(String).map((s) => s.trim()).filter(Boolean).join(",");
+  if (wantedSubs) inputs.sub_ids = wantedSubs;
   const res = await fetch(url, {
     method: "POST",
     headers: { ..._ghHeaders(token), "Content-Type": "application/json" },

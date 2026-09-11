@@ -177,6 +177,15 @@ COURSE_IDS = [
     if c.strip()
 ]
 
+# 可选：只处理指定的课次 sub_id（逗号分隔）。用于“选择某一节回放，单独生成笔记并
+# 发送邮件”的单节运行。留空时维持原有“处理该课程所有新课次”的行为。
+# 例：SUB_IDS=657032 或 SUB_IDS=657032,657033
+SUB_IDS = [
+    s.strip()
+    for s in os.environ.get("SUB_IDS", "").split(",")
+    if s.strip()
+]
+
 # 学期级课程目录爬取（已弃用 — main.py 现在自动发现所有学期）。
 # 保留此变量仅用于兼容老部署环境，新部署无需设置。
 # 例：CRAWL_TERM=25
