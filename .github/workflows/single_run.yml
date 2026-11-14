@@ -166,6 +166,7 @@ jobs:
         env:
           StuId: ${{ secrets.STUID }}
           UISPsw: ${{ secrets.UISPSW }}
+          UIS_TOTP_SECRET: ${{ secrets.UIS_TOTP_SECRET }}
           COURSE_IDS: ${{ inputs.course_ids }}
           SUB_IDS: ${{ inputs.sub_ids }}
           USE_OFFICIAL_TRANSCRIPT: ${{ inputs.use_official_transcript && '1' || '' }}
